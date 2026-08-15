@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aethelgard — The Weaver's Mark</title>
+  <meta name="description" content="Interactive dark fantasy text RPG. Play as Kaelen Vane in the sunless continent of Aethelgard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0a0e;
+      --surface: #14121a;
+      --surface2: #1c1824;
+      --border: #2e2838;
+      --text: #e8e0d5;
+      --muted: #9a8f82;
+      --accent: #8b5cf6;
+      --accent-dim: #6d28d9;
+      --danger: #c23b4a;
+      --success: #3d9a6a;
+      --warning: #c9a227;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Crimson Pro', Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 1.125rem;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(139,92,246,0.08), transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(194,59,74,0.06), transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .wrap {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 24px 18px 80px;
+      position: relative;
+      z-index: 1;
+    }
+    header {
+      text-align: center;
+      padding: 28px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-family: var(--font-display);
+      font-size: 1.85rem;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+    header h1 span { color: var(--accent); }
+    header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    /* Dashboard */
+    .dashboard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 28px;
+      font-size: 0.92rem;
+    }
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 20px;
+    }
+    @media (max-width: 560px) { .dash-grid { grid-template-columns: 1fr; } }
+    .dash-item strong { color: var(--muted); font-weight: 600; }
+    .bar {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 3px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .bar > div { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .bar-health > div { background: var(--success); }
+    .bar-corruption > div { background: var(--accent); }
+    .factions { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--muted); }
+    /* Narrative */
+    .narrative {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 26px 24px;
+      margin-bottom: 24px;
+      white-space: pre-wrap;
+    }
+    .narrative p { margin-bottom: 1em; }
+    .narrative p:last-child { margin-bottom: 0; }
+    /* Choices */
+    .choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .choice-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px 18px;
+      border-radius: 10px;
+      text-align: left;
+      font-family: var(--font-body);
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .choice-btn:hover {
+      border-color: var(--accent);
+      background: rgba(139,92,246,0.1);
+    }
+    .choice-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    /* Custom input */
+    .custom-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .custom-row input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 1rem;
+    }
+    .custom-row input:focus { outline: none; border-color: var(--accent); }
+    .custom-row button {
+      background: var(--accent-dim);
+      color: white;
+      border: none;
+      padding: 0 20px;
+      border-radius: 10px;
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .custom-row button:hover { background: var(--accent); }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Aethelgard <span>— The Weaver's Mark</span></h1>
+      <p>Interactive dark fantasy text RPG</p>
+    </header>
+
+    <div class="dashboard" id="dashboard"></div>
+
+    <div class="narrative" id="narrative"></div>
+
+    <div class="choices" id="choices"></div>
+
+    <div class="custom-row">
+      <input type="text" id="customInput" placeholder="Type a custom action..." autocomplete="off" />
+      <button onclick="submitCustom()">Act</button>
+    </div>
+
+    <footer>
+      <p><a href="https://github.com/nifze/aethelgard" target="_blank">Source on GitHub</a> · State saved in your browser</p>
+    </footer>
+  </div>
+
+  <script>
+    // ─── Game State ───
+    const defaultState = {
+      location: "Sunken Vaults of Iron-Hold",
+      time: "Eternal Twilight",
+      conditions: "Ash-choked air, near-total darkness",
+      health: 38,
+      corruption: 12,
+      inventory: ["Torn execution tunic", "Empty scabbard", "Obsidian Guard captain's signet ring"],
+      rations: 0,
+      gold: 0,
+      factions: {
+        "Obsidian Guard": "Hostile",
+        "The Weaver's Cult": "Neutral",
+        "Scavenger Guild": "Friendly",
+        "High Sun Clerics": "Hostile"
+      },
+      quest: "Survive the next five minutes. Escape the Vaults before the scouts find you.",
+      scene: "opening",
+      flags: {}
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem("aethelgard_save");
+        return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem("aethelgard_save", JSON.stringify(state));
+    }
+
+    function resetGame() {
+      if (confirm("Start a new game? Current progress will be lost.")) {
+        localStorage.removeItem("aethelgard_save");
+        state = { ...defaultState };
+        render();
+      }
+    }
+
+    // ─── Rendering ───
+    function renderDashboard() {
+      const d = document.getElementById("dashboard");
+      d.innerHTML = `
+        <div class="dash-grid">
+          <div class="dash-item"><strong>Location</strong><br>${state.location}</div>
+          <div class="dash-item"><strong>Conditions</strong><br>${state.time} · ${state.conditions}</div>
+          <div class="dash-item">
+            <strong>Health</strong> ${state.health}%
+            <div class="bar bar-health"><div style="width:${state.health}%"></div></div>
+          </div>
+          <div class="dash-item">
+            <strong>Corruption</strong> ${state.corruption}%
+            <div class="bar bar-corruption"><div style="width:${state.corruption}%"></div></div>
+          </div>
+          <div class="dash-item"><strong>Rations / Gold</strong><br>${state.rations} / ${state.gold}</div>
+          <div class="dash-item"><strong>Quest</strong><br>${state.quest}</div>
+        </div>
+        <div class="factions">
+          <strong>Factions:</strong>
+          Obsidian Guard (${state.factions["Obsidian Guard"]}) ·
+          Weaver's Cult (${state.factions["The Weaver's Cult"]}) ·
+          Scavenger Guild (${state.factions["Scavenger Guild"]}) ·
+          High Sun Clerics (${state.factions["High Sun Clerics"]})
+        </div>
+        <div style="margin-top:10px;font-size:0.8rem;color:var(--muted)">
+          Inventory: ${state.inventory.join(", ") || "Nothing"}
+          &nbsp;·&nbsp;
+          <a href="#" onclick="resetGame();return false;" style="color:var(--danger)">New Game</a>
+        </div>
+      `;
+    }
+
+    function renderNarrative(text) {
+      document.getElementById("narrative").innerHTML = text;
+    }
+
+    function renderChoices(choices) {
+      const box = document.getElementById("choices");
+      box.innerHTML = "";
+      choices.forEach((c, i) => {
+        const btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = `${i + 1}. ${c.label}`;
+        btn.onclick = () => takeAction(c.id);
+        box.appendChild(btn);
+      });
+    }
+
+    // ─── Scenes ───
+    const scenes = {
+      opening: {
+        text: `You awaken face-down in cold ash inside the Sunken Vaults of Iron-Hold—the deep catacombs beneath the fortress city where your execution took place hours ago. Your chest burns where the executioner’s blade struck, but the flesh is bound together by threads of ethereal dark energy. The brand on your right arm pulses with a dull violet light.
+
+From the shadows above, heavily armored footsteps echo down the stone steps. Two Obsidian Guard scouts are descending with torches, searching for discarded bodies to throw into the incinerator pit.
+
+Torchlight spills across the vaulted ceiling. The scouts are twenty paces above you and descending. The incinerator pit yawns three meters to your left. To your right, a collapsed side passage offers deeper darkness. Behind you, the stair continues upward toward the living city.`,
+        choices: [
+          { id: "hide_still", label: "Remain perfectly still among the ash and corpses" },
+          { id: "hide_pit", label: "Drag yourself into the incinerator pit" },
+          { id: "crawl_passage", label: "Crawl into the collapsed side passage" },
+          { id: "confront", label: "Rise and confront them using the void-mark (raises Corruption)" }
+        ]
+      },
+      hide_still: {
+        text: `You force your body to go limp among the cold ash and discarded corpses. The brand on your arm dims to a faint ember as you will it into stillness.
+
+The two scouts reach the chamber floor. Boots scrape. One kicks a body near you; the impact sends a jolt of pain through your cracked ribs. You do not move.
+
+“Nothing fresh,” one mutters. “Vane’s already been taken up, or the rats got to him.”
+
+They spend another minute checking the pit and the side passage, then climb back up the stairs, torchlight fading.
+
+You are alone again. Alive. For now.`,
+        choices: [
+          { id: "to_passage", label: "Crawl into the side passage while the way is clear" },
+          { id: "up_stairs", label: "Risk the stairs toward the city above" },
+          { id: "search_bodies", label: "Search the nearby corpses for anything useful" }
+        ],
+        onEnter: () => { state.flags.scoutsPassed = true; }
+      },
+      hide_pit: {
+        text: `You drag yourself toward the black mouth of the incinerator pit. The stench of charred flesh and ash coats your tongue. You slide over the rim and drop among half-burned remains.
+
+The fall aggravates your wound. Pain flares white-hot.
+
+Above, the scouts enter the chamber. One leans over the pit, torch held high. Embers drift down onto your shoulder.
+
+“Just the usual refuse,” he says after a long moment. “Move on.”
+
+They leave. You climb out, coughing, your health worsened by the drop and the heat.`,
+        choices: [
+          { id: "to_passage", label: "Crawl into the side passage" },
+          { id: "up_stairs", label: "Risk the stairs toward the city" },
+          { id: "search_bodies", label: "Search the chamber for gear" }
+        ],
+        onEnter: () => {
+          state.health = Math.max(15, state.health - 12);
+          state.flags.scoutsPassed = true;
+        }
+      },
+      crawl_passage: {
+        text: `You force yourself into the collapsed side passage. Sharp stone scrapes your shoulders. The air grows colder and wetter. Behind you, torchlight sweeps the main chamber as the scouts arrive.
+
+You keep moving, deeper into the dark, until their voices fade.
+
+The passage opens into a narrow service tunnel lined with old pipes and forgotten crates. Somewhere ahead, water drips steadily. A faint violet glow answers from the mark on your arm, illuminating a rusted iron door set into the wall.`,
+        choices: [
+          { id: "open_door", label: "Force the rusted iron door open" },
+          { id: "follow_tunnel", label: "Continue down the service tunnel" },
+          { id: "rest_moment", label: "Rest a moment and examine the Weaver's mark" }
+        ],
+        onEnter: () => {
+          state.location = "Service tunnels beneath Iron-Hold";
+          state.conditions = "Damp, cold, absolute dark";
+          state.flags.escapedVault = true;
+        }
+      },
+      confront: {
+        text: `You rise from the ash. The brand on your right arm ignites with violent violet light. Void-threads lash outward.
+
+The lead scout has just enough time to shout before the magic takes him—shadowy filaments wrap his throat and slam him into the wall. The second scout draws a short blade and charges.
+
+You meet him with the empty scabbard as a club. The impact jars your broken ribs. He staggers. You seize his torch and drive the burning end into his faceplate. He falls screaming.
+
+Both scouts are down. One may still be alive. The mark on your arm pulses harder, hungrier. Corruption has deepened.`,
+        choices: [
+          { id: "loot_scouts", label: "Search the fallen scouts for weapons and gear" },
+          { id: "finish_them", label: "Ensure both are dead" },
+          { id: "to_passage", label: "Leave them and take the side passage" },
+          { id: "up_stairs", label: "Take the stairs upward while the alarm is still quiet" }
+        ],
+        onEnter: () => {
+          state.corruption = Math.min(100, state.corruption + 18);
+          state.health = Math.max(20, state.health - 8);
+          state.flags.scoutsKilled = true;
+          state.factions["Obsidian Guard"] = "Hunted";
+        }
+      },
+      // Continued branches (simplified for initial version)
+      to_passage: {
+        text: `You leave the main vault behind and force your way into the collapsed side passage. The stone is wet and sharp. After twenty meters the tunnel opens into a service corridor. A rusted iron door stands to one side. Further on, the tunnel slopes downward toward the old undercroft.`,
+        choices: [
+          { id: "open_door", label: "Force open the rusted iron door" },
+          { id: "follow_tunnel", label: "Continue deeper into the undercroft" },
+          { id: "rest_moment", label: "Stop and examine the Weaver's mark" }
+        ],
+        onEnter: () => {
+          state.location = "Service tunnels beneath Iron-Hold";
+          state.conditions = "Damp, cold, absolute dark";
+        }
+      },
+      up_stairs: {
+        text: `You climb the stone stairs, every step a fresh agony in your chest. Torch brackets line the walls, most empty. At the top, a heavy oak door stands ajar. Beyond it you hear distant voices, the clatter of a busy fortress at twilight, and the low toll of a warning bell.
+
+You are still inside Iron-Hold. The city that sentenced you to death.`,
+        choices: [
+          { id: "sneak_city", label: "Slip into the fortress corridors and seek a way out" },
+          { id: "back_down", label: "Retreat back into the Vaults — too dangerous" },
+          { id: "listen", label: "Remain hidden and listen to the voices beyond the door" }
+        ],
+        onEnter: () => {
+          state.location = "Upper stairs of the Sunken Vaults";
+          state.quest = "Escape Iron-Hold without being recognized";
+        }
+      },
+      search_bodies: {
+        text: `You search the cold bodies around you with shaking hands. Most have already been stripped. One, however, still wears a cracked leather belt pouch. Inside: a small folding knife, three copper coins, and a half-dried strip of salted meat.
+
+Better than nothing.`,
+        choices: [
+          { id: "to_passage", label: "Take the side passage" },
+          { id: "up_stairs", label: "Climb toward the city" }
+        ],
+        onEnter: () => {
+          state.inventory.push("Folding knife", "Salted meat strip");
+          state.rations += 1;
+          state.gold += 3;
+        }
+      },
+      loot_scouts: {
+        text: `You strip the fallen scouts quickly. One carries a serviceable short sword and a half-full waterskin. The other has a torch, a set of iron keys, and a small pouch containing eight silver coins and a folded note stamped with the Lord Marshal’s seal.
+
+The note is an order to “dispose of Captain Vane’s remains quietly.” Evidence, if you ever need it.`,
+        choices: [
+          { id: "to_passage", label: "Take the side passage into the tunnels" },
+          { id: "up_stairs", label: "Climb the stairs into the fortress" }
+        ],
+        onEnter: () => {
+          state.inventory.push("Short sword", "Waterskin", "Iron keys", "Lord Marshal's disposal order");
+          state.gold += 8;
+          state.rations += 1;
+        }
+      },
+      finish_them: {
+        text: `You end both scouts cleanly. No witnesses. The brand on your arm seems satisfied for a moment, then settles into a low, constant ache.
+
+You now have time to loot or leave.`,
+        choices: [
+          { id: "loot_scouts", label: "Search the bodies thoroughly" },
+          { id: "to_passage", label: "Enter the side passage" },
+          { id: "up_stairs", label: "Take the stairs upward" }
+        ],
+        onEnter: () => {
+          state.flags.scoutsDead = true;
+          state.corruption = Math.min(100, state.corruption + 5);
+        }
+      },
+      open_door: {
+        text: `The rusted iron door screams as you force it open. Beyond lies a forgotten storeroom: collapsed shelves, a few intact crates, and a skeleton still wearing the faded tabard of a long-dead quartermaster. Among the dust you find a sealed oilskin packet containing a hand-drawn map of the lower undercroft and a single black iron key etched with the Weaver’s geometric mark.
+
+The mark on your arm flares in recognition.`,
+        choices: [
+          { id: "follow_tunnel", label: "Take the map and continue into the undercroft" },
+          { id: "rest_moment", label: "Study the Weaver's key and the mark on your arm" }
+        ],
+        onEnter: () => {
+          state.inventory.push("Undercroft map", "Weaver's black key");
+          state.corruption = Math.min(100, state.corruption + 3);
+          state.quest = "Follow the undercroft map toward a possible exit";
+        }
+      },
+      follow_tunnel: {
+        text: `The service tunnel slopes downward for a long time. The air grows colder. Eventually it opens into a vast, flooded undercroft. Black water laps at stone pillars. In the distance, a faint greenish light moves beneath the surface — something living, or once living, that should not be here.
+
+A narrow walkway of broken stone leads left toward a grated tunnel that, according to the map, eventually surfaces outside the fortress walls.`,
+        choices: [
+          { id: "cross_walkway", label: "Take the narrow walkway toward the exit grate" },
+          { id: "investigate_light", label: "Investigate the green light in the water (dangerous)" },
+          { id: "rest_moment", label: "Rest and recover what strength you can" }
+        ],
+        onEnter: () => {
+          state.location = "Flooded Undercroft";
+          state.conditions = "Black water, unnatural green light, oppressive silence";
+        }
+      },
+      rest_moment: {
+        text: `You sink against the cold stone and examine the brand. The geometric scars shift slowly, like a living circuit. When you focus, you feel a distant presence — vast, patient, and amused.
+
+“You live because I require a vessel that remembers how to kill,” the voice does not speak so much as unfold inside your thoughts. “The sun is gone. The old laws are ash. Walk the Twilight, Kaelen Vane. Break what remains.”
+
+The presence recedes. You are left with a clearer sense of the power coiled in your arm… and a deeper certainty that it is not free.`,
+        choices: [
+          { id: "follow_tunnel", label: "Continue into the undercroft" },
+          { id: "open_door", label: "Return to the storeroom door" }
+        ],
+        onEnter: () => {
+          state.corruption = Math.min(100, state.corruption + 4);
+          state.health = Math.min(100, state.health + 6);
+        }
+      },
+      // End-ish placeholders for more content later
+      cross_walkway: {
+        text: `You edge along the broken walkway. Water soaks your boots. Halfway across, something large moves beneath the surface. You freeze. After a long moment it sinks again.
+
+You reach the grated tunnel. The iron is old but the lock yields to the black key from the storeroom. Beyond, a steep shaft climbs toward surface air and the eternal Twilight of Aethelgard.
+
+You have escaped the Vaults of Iron-Hold.
+
+(More of the open world will open in future updates.)`,
+        choices: [
+          { id: "opening", label: "Restart from the beginning" }
+        ],
+        onEnter: () => {
+          state.location = "Outside Iron-Hold — Twilight Wilds";
+          state.quest = "Survive the wilds and decide what the Weaver truly wants";
+          state.flags.escaped = true;
+        }
+      },
+      investigate_light: {
+        text: `You kneel at the water’s edge. The green light rises. A bloated, crystal-encrusted corpse floats upward — one of the Blighted. Its empty eye sockets fix on the mark on your arm. It reaches for you with elongated fingers.
+
+You scramble back. The thing pulls itself onto the stone with wet, cracking sounds. Combat is inevitable.`,
+        choices: [
+          { id: "fight_blighted", label: "Fight the Blighted with whatever you have" },
+          { id: "flee_walkway", label: "Run for the walkway and the exit grate" }
+        ],
+        onEnter: () => {
+          state.flags.blightedEncounter = true;
+        }
+      },
+      fight_blighted: {
+        text: `The Blighted lunges. You meet it with steel (or the folding knife if that is all you carry). Crystal shards cut your forearm. Void-light flares from your brand and burns into the creature’s chest. It shrieks — a sound like breaking glass — and collapses into black water and dissolving crystal.
+
+You are bleeding, but alive. The mark has grown stronger.`,
+        choices: [
+          { id: "cross_walkway", label: "Take the walkway to the exit" }
+        ],
+        onEnter: () => {
+          state.health = Math.max(10, state.health - 15);
+          state.corruption = Math.min(100, state.corruption + 10);
+        }
+      },
+      flee_walkway: {
+        text: `You sprint along the narrow walkway. The Blighted thrashes behind you but does not pursue far. You reach the grate, unlock it with the black key, and climb into the shaft that leads toward the surface.
+
+Behind you, the undercroft falls silent again.`,
+        choices: [
+          { id: "cross_walkway", label: "Continue upward to the Twilight Wilds" }
+        ]
+      },
+      sneak_city: {
+        text: `You slip through the fortress corridors like a ghost. Patrols are thicker than usual — word of the missing scouts has not yet spread, but tension is high. You reach an outer postern gate used by the Scavenger Guild.
+
+A Guild contact recognizes the old signet ring still on your finger and, after a long look, waves you through into the Twilight beyond the walls.
+
+You are free of Iron-Hold. For now.`,
+        choices: [
+          { id: "opening", label: "Restart from the beginning" }
+        ],
+        onEnter: () => {
+          state.location = "Twilight Wilds outside Iron-Hold";
+          state.quest = "Survive and uncover the Weaver's purpose";
+          state.factions["Scavenger Guild"] = "Allied";
+        }
+      },
+      listen: {
+        text: `You press against the door and listen. Two officers discuss the Lord Marshal’s order to erase all record of your trial. One mentions that “the Clerics are already sniffing around the Vaults.”
+
+Useful knowledge. Dangerous knowledge.`,
+        choices: [
+          { id: "sneak_city", label: "Slip away into the corridors" },
+          { id: "back_down", label: "Retreat into the Vaults" }
+        ]
+      },
+      back_down: {
+        text: `You descend again into the cold dark of the Vaults. The scouts’ torches are gone. The side passage still waits.`,
+        choices: [
+          { id: "to_passage", label: "Enter the side passage" },
+          { id: "search_bodies", label: "Search the chamber once more" }
+        ]
+      }
+    };
+
+    // ─── Core loop ───
+    function takeAction(id) {
+      const scene = scenes[id];
+      if (!scene) {
+        renderNarrative(`You attempt something unexpected. The dark of Aethelgard does not yet have a path for that action.\n\n(Custom actions beyond the current branches will be expanded in future updates.)`);
+        renderChoices([{ id: state.scene || "opening", label: "Return to previous options" }]);
+        return;
+      }
+      if (scene.onEnter) scene.onEnter();
+      state.scene = id;
+      saveState();
+      render();
+    }
+
+    function submitCustom() {
+      const input = document.getElementById("customInput");
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = "";
+      // Very light custom handling for flavor
+      renderNarrative(`You attempt: “${text}”\n\nThe world responds in silence for a moment. Then the mark on your arm pulses once, as if amused.\n\n(Full free-text parsing is limited in this version. Use the numbered choices for the main path, or try again with a different approach.)`);
+      // Keep current choices
+      const current = scenes[state.scene];
+      if (current) renderChoices(current.choices);
+    }
+
+    function render() {
+      renderDashboard();
+      const scene = scenes[state.scene] || scenes.opening;
+      renderNarrative(scene.text);
+      renderChoices(scene.choices);
+    }
+
+    // Enter key support
+    document.getElementById("customInput").addEventListener("keydown", e => {
+      if (e.key === "Enter") submitCustom();
+    });
+
+    // Boot
+    render();
+  </script>
+</body>
+</html>
